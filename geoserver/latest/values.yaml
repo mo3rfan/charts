@@ -118,6 +118,9 @@ secrets:
   master_password: "geoserver"
   postgis_password: "geoserver"
   admin_password: "notgeoserver"
+  azure_service_principal: "undefined"
+  azure_client_password: "undefined"
+  azure_tenant_id: "undefined"
 postgis:
   enabled: false
   image: "postgis/postgis:12-3.1"

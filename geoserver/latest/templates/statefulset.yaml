@@ -63,12 +63,25 @@ spec:
             - name: gs-tomcatlogs
               mountPath: /usr/local/tomcat/logs
           command: ['sh', '-c', 'mkdir -p $(GEOSERVER_AUDIT_PATH)/$(POD_HOSTNAME) && mkdir -p $(GEOSERVER_LOG_LOCATION)/$(POD_HOSTNAME) && mkdir -p $(GEOSERVER_HEAP_DUMP_DIR)/$(POD_HOSTNAME) && chown -R 1000:1000 /var/geoserver']
+        - name: init-copy-gs-properties-file
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          volumeMounts:
+            - name: properties-file
+              mountPath: /var/geoserver/properties
+          command: ['sh', '-c', 'cp /var/geoserver/datadir/geoserver-environment.properties /var/geoserver/properties/geoserver-environment.properties']
+        - name: init-azuresecret
+          image: mcr.microsoft.com/azure-cli
+          volumeMounts:
+            - name: properties-file
+              mountPath: /var/geoserver/properties
+          command: ['sh', '-c', 'az login --service-principal -u {{ .Values.secrets.azure_service_principal }} -p {{ .Values.secrets.azure_client_password }} --tenant {{ .Values.secrets.azure_tenant_id }} && sed -i "s/^azure.reader.accountKey=.*/azure.reader.accountKey==$(az keyvault secret show --vault-name guycarpvault -n cog-blobstore-password --query value -o tsv)/" /var/geoserver/properties/geoserver-environment.properties']
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ['sh', '-c', 'rm /var/geoserver/datadir/geoserver-environment.properties && ln -s /var/geoserver/properties/geoserver-environment.properties /var/geoserver/datadir/geoserver-environment.properties && /entrypoint.sh']
           env:
             - name: ADMIN_PASSWORD
               valueFrom:
@@ -204,6 +217,8 @@ spec:
             - name: gs-datadir
               mountPath: /var/geoserver/datadir
             {{- end }}
+            - name: properties-file
+              mountPath: /var/geoserver/properties
             - name: gs-memdumps
               mountPath: /var/geoserver/memory_dumps
             - name: gs-audits
@@ -252,6 +267,8 @@ spec:
           {{- end }}
         {{- end }}
       volumes:
+      - name: properties-file
+        emptyDir: {}  # This creates a temporary volume
       {{- if .Values.persistence.datadir }}
       - name: gs-datadir
         persistentVolumeClaim:
