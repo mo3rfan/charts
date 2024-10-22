@@ -121,6 +121,8 @@ secrets:
   azure_service_principal: "undefined"
   azure_client_password: "undefined"
   azure_tenant_id: "undefined"
+  azure_vault_name: "undefined"
+  azure_secret_object_name: "undefined"
 postgis:
   enabled: false
   image: "postgis/postgis:12-3.1"

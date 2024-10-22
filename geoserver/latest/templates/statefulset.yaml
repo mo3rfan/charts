@@ -74,7 +74,7 @@ spec:
           volumeMounts:
             - name: properties-file
               mountPath: /var/geoserver/properties
-          command: ['sh', '-c', 'az login --service-principal -u {{ .Values.secrets.azure_service_principal }} -p {{ .Values.secrets.azure_client_password }} --tenant {{ .Values.secrets.azure_tenant_id }} && sed -i "s/^azure.reader.accountKey=.*/azure.reader.accountKey==$(az keyvault secret show --vault-name guycarpvault -n cog-blobstore-password --query value -o tsv)/" /var/geoserver/properties/geoserver-environment.properties']
+          command: ['sh', '-c', 'az login --service-principal -u {{ .Values.secrets.azure_service_principal }} -p {{ .Values.secrets.azure_client_password }} --tenant {{ .Values.secrets.azure_tenant_id }} && sed -i "s/^azure.reader.accountKey=.*/azure.reader.accountKey==$(az keyvault secret show --vault-name {{ .Values.secrets.azure_vault_name }} -n {{ .Values.secrets.azure_secret_object_name }} --query value -o tsv)/" /var/geoserver/properties/geoserver-environment.properties']
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
