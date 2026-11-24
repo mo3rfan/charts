@@ -109,12 +109,6 @@ persistence:
     storageClass: "manual"
     manualPVName: "gs-blue-tomcatlogs"
     manualPVHostPath: "/mnt/gs-blue/tomcatlogs/"
-  coverages:
-    accessModes: ReadWriteOnce
-    size: 1Gi
-    storageClass: "manual"
-    manualPVName: "gs-blue-coverages"
-    manualPVHostPath: "/mnt/gs-blue/coverages/"
   datadir:
     accessModes: ReadWriteOnce
     size: 1Gi
@@ -178,8 +172,12 @@ geoserver:
     -DGEOWEBCACHE_CACHE_DIR=$(GEOWEBCACHE_CACHE_DIR) -DNETCDF_DATA_DIR=$(NETCDF_DATA_DIR) \
     -DGRIB_CACHE_DIR=$(GRIB_CACHE_DIR)
 
-  env_properties: |
-    EXAMPLE_DB_NAME=geoserver
-    EXAMPLE_DB_HOST=localhost
-    EXAMPLE_DB_USER=geoserver
-    EXAMPLE_DB_PASS=geoserver
+  env_properties:
+    - name: EXAMPLE_DB_NAME
+      value: geoserver
+    - name: EXAMPLE_DB_HOST
+      value: localhost
+    - name: EXAMPLE_DB_USER
+      value: geoserver
+    - name: EXAMPLE_DB_PASS
+      value: geoserver

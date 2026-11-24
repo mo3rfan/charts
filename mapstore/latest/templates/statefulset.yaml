@@ -1,43 +1,52 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ .Values.appName }}
+  name: {{ include "mapstore.fullname" . }}
   labels:
-    app: {{ .Values.appName }}
+    {{- include "mapstore.labels" . | nindent 4 }}
 spec:
-  serviceName: {{ .Values.appName }}
+  serviceName: {{ include "mapstore.fullname" . }}
   replicas: 1
   selector:
     matchLabels:
-      app: {{ .Values.appName }}
+      {{- include "mapstore.selectorLabels" . | nindent 6 }}
   template:
     metadata:
+      annotations:
+        checksum/secrets: {{ include "mapstore.ovr-secret" . | sha256sum }}
       labels:
-        app: {{ .Values.appName }}
+        {{- include "mapstore.selectorLabels" . | nindent 8 }}
     spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
-        - name: {{ .Values.appName }}
+        - name: {{ .Chart.Name }}
           image: '{{ .Values.image.name }}:{{ .Values.image.tag }}'
           imagePullPolicy: Always
           env:
-            - name: JAVA_OPTS
-              value: {{ .Values.env.JAVA_OPTS }}
-            - name: GEOSTORE_OVR_OPT
-              value: "-Dgeostore-ovr=file:///config/geostore-datasource-ovr.properties"
+            {{- range $key, $value := .Values.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
           ports:
             - name: http
               containerPort: 80
               protocol: TCP
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
             - name: datadir
-              mountPath: /var/mapstore/datadir
+              mountPath: /datadir
             - name: ovr-properties
-              mountPath: "/config"
+              mountPath: "/config/geostore-datasource-ovr.properties"
+              subPath: geostore-datasource-ovr.properties
               readOnly: true
       volumes:
         - name: datadir
           persistentVolumeClaim:
-            claimName: mapstore-pvc
+            claimName: {{ include "mapstore.fullname" . }}
         - name: ovr-properties
           secret:
-            secretName: ovr-secret
+            secretName: {{ include "mapstore.fullname" . }}-ovr

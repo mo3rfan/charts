@@ -78,32 +78,6 @@ spec:
 
 ---
 
-{{- if .Values.persistence.coverages.manualPVName }}
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: {{ .Values.persistence.coverages.manualPVName }}
-  labels:
-      type: local
-spec:
-  capacity:
-    storage: {{ .Values.persistence.coverages.size | quote }}
-  volumeMode: Filesystem
-  accessModes:
-    - {{ .Values.persistence.coverages.accessModes }}
-  persistentVolumeReclaimPolicy: Retain
-  storageClassName: {{ .Values.persistence.coverages.storageClass }}
-  claimRef:
-    name: {{ include "geoserver.fullname" . }}-coverages
-    namespace: {{ .Release.Namespace }}
-  {{- if .Values.persistence.coverages.manualPVHostPath }}
-  hostPath:
-    path: {{ .Values.persistence.coverages.manualPVHostPath }}
-  {{- end }}
-{{- end }}
-
----
-
 {{- if .Values.persistence.datadir.manualPVName }}
 apiVersion: v1
 kind: PersistentVolume

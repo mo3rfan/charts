@@ -10,6 +10,15 @@ image:
   # Overrides the image tag whose default is the chart appVersion.
   tag: ""
 
+initContainer:
+  image:
+    repository: busybox
+    tag: "1.28"
+    pullPolicy: IfNotPresent
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 20000
+    runAsGroup: 20000
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
@@ -26,7 +35,7 @@ serviceAccount:
 podAnnotations: {}
 
 podSecurityContext:
-  fsGroup: 1000
+  fsGroup: 20000
 
 securityContext:
   # capabilities:
@@ -34,18 +43,20 @@ securityContext:
   #   - ALL
   # readOnlyRootFilesystem: true
   runAsNonRoot: true
-  runAsUser: 1000
+  runAsUser: 20000
+  runAsGroup: 20000
 
 service:
   type: ClusterIP
   port: 80
 
 ingress:
-  enabled: true
+  enabled: false
   className: ""
   annotations: {}
     # kubernetes.io/ingress.class: nginx
     # kubernetes.io/tls-acme: "true"
+  finalizers: []
   hosts:
     - host: geoserver.local
       paths:
@@ -59,17 +70,13 @@ ingress:
   #    hosts:
   #      - chart-example.local
 
-resources: {}
-  # We usually recommend not to specify default resources and to leave this as a conscious
-  # choice for the user. This also increases chances charts run on environments with little
-  # resources, such as Minikube. If you do want to specify resources, uncomment the following
-  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-  # limits:
-  #   cpu: 100m
-  #   memory: 128Mi
-  # requests:
-  #   cpu: 100m
-  #   memory: 128Mi
+resources:
+  requests:
+    cpu: 500m
+    memory: 1Gi
+  limits:
+    cpu: "2"
+    memory: 5Gi
 
 autoscaling:
   enabled: false
@@ -77,6 +84,10 @@ autoscaling:
   maxReplicas: 100
   targetCPUUtilizationPercentage: 80
   # targetMemoryUtilizationPercentage: 80
+
+podDisruptionBudget:
+  enabled: false
+  minAvailable: 1
 
 nodeSelector: {}
 
@@ -97,11 +108,17 @@ persistence:
     accessModes: ReadWriteOnce
     size: 1Gi
     storageClass: ""
-  coverages:
+  datadir:
     accessModes: ReadWriteOnce
     size: 1Gi
     storageClass: ""
-  datadir:
+  # Optional GWC cache directory
+  # Uncomment to enable. Mounted at `/var/geoserver/gwc_cache_dir`.
+  # gwccache:
+  #   accessModes: ReadWriteOnce
+  #   size: 1Gi
+  #   storageClass: ""
+  data:
     accessModes: ReadWriteOnce
     size: 1Gi
     storageClass: ""
@@ -109,15 +126,27 @@ persistence:
     accessModes: ReadWriteOnce
     size: 1Gi
     storageClass: ""
+  # Optional WPS JDBC shared Resource Storage Directory
+  # wps:
+  #   accessModes: ReadWriteOnce
+  #   size: 1Gi
+  #   storageClass: ""
   postgis:
     accessModes: ReadWriteOnce
     size: 1Gi
     storageClass: ""
 
 secrets:
+  master_external_secret: false  # Set true to use existing K8s secret instead of creating one
   master_password: "geoserver"
+  master_password_key: "MASTER_PASSWORD"
+  postgis_external_secret: false  # Set true to use existing K8s secret instead of creating one
   postgis_password: "geoserver"
+  postgis_password_key: "POSTGIS_PASSWORD"
+  admin_external_secret: false    # Set true to use existing K8s secret instead of creating one
   admin_password: "notgeoserver"
+  admin_password_key: "ADMIN_PASSWORD"
+
 postgis:
   enabled: false
   image: "postgis/postgis:12-3.1"
@@ -129,21 +158,24 @@ postgis:
 
 tomcat:
   httpConnector:
-    maxHttpHeaderSize: "10000"
+    maxHttpHeaderSize: ""
 
 geoserver:
+  chown_datadir: false
+
   # space separated list of plugin URLs (see also this possibility below to format such string)
   # plugins: "https://sourceforge.net/projects/geoserver/files/GeoServer/2.20.4/extensions/geoserver-2.20.4-monitor-plugin.zip \
   #   https://sourceforge.net/projects/geoserver/files/GeoServer/2.20.4/extensions/geoserver-2.20.4-control-flow-plugin.zip"
   # to enable audit logging once the pod is deployed go inside the geoserver pod and configure it in the datadir according to doc:
   # https://docs.geoserver.org/latest/en/user/extensions/monitoring/audit.html
   plugins: ""
-  geoserver_proxy_base_url: "${X-Forwarded-Proto}://${X-Forwarded-Host}/geoserver"
+  geoserver_proxy_base_url: "${X-Forwarded-Proto}://${X-Forwarded-Host}/"
   geoserver_log_location: "/var/geoserver/logs/$(POD_HOSTNAME).log"
   geoserver_audit_path: "/var/geoserver/audits"
   geoserver_heap_dump_dir: "/var/geoserver/memory_dumps"
   geoserver_data_dir: "/var/geoserver/datadir"
-  geoserver_cache_data_dir: "$(GEOSERVER_DATA_DIR)/gwc_cache_dir"
+  # Empty value uses a chart default based on persistence.gwccache.
+  geoserver_cache_data_dir: ""
   geoserver_cache_config_dir: "$(GEOSERVER_DATA_DIR)/gwc"
   geoserver_netcdf_data_dir: "/var/geoserver/netcdf_data_dir"
   geoserver_grib_cache_dir: "/var/geoserver/grib_cache_dir"
@@ -154,5 +186,9 @@ geoserver:
   geoserver_cors_enabled: "false"
   geoserver_cors_allowed_methods: "GET,POST,PUT,HEAD,OPTIONS"
   geoserver_cors_allowed_origins: "*"
-  geoserver_cors_allowed_headers: "*"
+  geoserver_cors_allowed_headers: "accept,accept-language,cache-control,content-type,origin,pragma,priority,referer,user-agent,sec-fetch-dest,sec-fetch-mode,sec-fetch-site,authorization,x-requested-with,access-control-request-headers,access-control-request-method"
   geoserver_cors_allow_credentials: "false"
+
+  geoserver_extra_opts: >
+
+  env_properties: []
