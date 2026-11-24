@@ -17,8 +17,8 @@ initContainer:
     pullPolicy: IfNotPresent
   securityContext:
     runAsNonRoot: true
-    runAsUser: 20000
-    runAsGroup: 20000
+    runAsUser: 1000
+    runAsGroup: 1000
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
@@ -35,7 +35,7 @@ serviceAccount:
 podAnnotations: {}
 
 podSecurityContext:
-  fsGroup: 20000
+  fsGroup: 1000
 
 securityContext:
   # capabilities:
@@ -43,8 +43,8 @@ securityContext:
   #   - ALL
   # readOnlyRootFilesystem: true
   runAsNonRoot: true
-  runAsUser: 20000
-  runAsGroup: 20000
+  runAsUser: 1000
+  runAsGroup: 1000
 
 service:
   type: ClusterIP
