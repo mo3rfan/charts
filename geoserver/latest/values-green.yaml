@@ -91,6 +91,9 @@ persistence:
   # If you choose to use this, be sure the paths in the PVs template exist.
   createManuallyProvisionedPVs: true
 
+  # Not used on blue/green: unset the chart default so no `data` PVC is created.
+  data: null
+
   audits:
     accessModes: ReadWriteOnce
     size: 1Gi

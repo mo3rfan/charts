@@ -35,4 +35,4 @@ To avoid this:
 - Use a custom StorageClass with `reclaimPolicy: Retain`
 - Or manually back up your data before uninstalling
 
-🔍 Current StorageClass used: {{ .Values.persistence.data.storageClass | default "standard" }}
+🔍 Current StorageClass used: {{ (.Values.persistence.data).storageClass | default "standard" }}

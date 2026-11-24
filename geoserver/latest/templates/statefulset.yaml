@@ -64,8 +64,10 @@ spec:
           volumeMounts:
             - name: gs-datadir
               mountPath: /var/geoserver/datadir
+            {{- if .Values.persistence.data }}
             - name: gs-data
               mountPath: /var/geoserver/data
+            {{- end }}
             {{- if .Values.persistence.gwccache }}
             - name: gs-gwccache
               mountPath: /var/geoserver/gwc_cache_dir
@@ -333,8 +335,10 @@ spec:
             - name: gs-gwccache
               mountPath: /var/geoserver/gwc_cache_dir
             {{- end }}
+            {{- if .Values.persistence.data }}
             - name: gs-data
               mountPath: /var/geoserver/data
+            {{- end }}
             - name: gs-memdumps
               mountPath: /var/geoserver/memory_dumps
             - name: gs-audits
